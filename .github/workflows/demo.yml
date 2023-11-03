@@ -18,6 +18,8 @@ jobs:
   build:
     needs: test
     runs-on: ubuntu-latest
+    outputs:
+      script-file: ${{ steps.publish.outputs.something }}
     steps:
       - name: Get code
         uses: actions/checkout@v3
@@ -25,6 +27,12 @@ jobs:
         run: npm ci
       - name: Build website
         run: npm run build
+      - name: Publish JS filename
+        id: publish
+        run: find dist/assets/*.js -type f -execdir echo 'something={}' >> $GITHUB_OUTPUT ';'
+        # die auskommentierte run: Zeile bewirkt genau das gleiche wie die Zeile darüber. 
+        # es ist nur eine alte syntax. Die obere ist die akutelle Syntax!
+        # run: find dist/assets/*.js -type f -execdir echo '::set-output name=something::{}' ';'
       - name: upload artifacts
         uses: actions/upload-artifact@v3
         with:
@@ -32,7 +40,7 @@ jobs:
           path: dist
           # path: |
           #  dist
-          #  package.json
+          #  package.json 
   deploy:
     needs: build
     runs-on: ubuntu-latest
@@ -43,5 +51,7 @@ jobs:
           name: myapp-files
       - name: Output contents
         run: ls
+      - name: Output filename
+        run: echo "${{ needs.build.outputs.script-file }}"
       - name: Deploy
         run: echo "Deploying..."
